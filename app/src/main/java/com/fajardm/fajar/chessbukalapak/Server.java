@@ -1,0 +1,72 @@
+package com.fajardm.fajar.chessbukalapak;
+
+import android.content.Context;
+import android.net.ConnectivityManager;
+import android.net.NetworkInfo;
+import android.util.Log;
+import android.widget.Toast;
+
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
+import java.io.InputStreamReader;
+import java.io.OutputStreamWriter;
+import java.io.PrintWriter;
+import java.net.InetAddress;
+import java.net.Socket;
+
+/**
+ * Created by fajar on 22/04/2016.
+ */
+public class Server {
+
+    private String serverMessage;
+    public static final int PORT = 7387;
+    public static final String URL = "xinuc.org";
+    private OnMessageReceived mMessageListener = null;
+    private BufferedReader in;
+
+    /**
+     * Constructor of the class. OnMessagedReceived listens for the messages received from server
+     */
+    public Server(OnMessageReceived listener) {
+        mMessageListener = listener;
+    }
+
+    public void run() {
+        try {
+            Log.e("TCP Client", "C: Connecting...");
+            //create a socket to make the connection with the server
+            Socket socket = new Socket(URL, PORT);
+            try {
+                Log.e("TCP Client", "C: Sent.");
+                Log.e("TCP Client", "C: Done.");
+                //receive the message which the server sends back
+                in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+                //in this while the client listens for the messages sent by the server
+                while (true) {
+                    serverMessage = in.readLine();
+                    if (serverMessage != null && mMessageListener != null) {
+                        //call the method messageReceived from MyActivity class
+                        mMessageListener.messageReceived(serverMessage);
+                    }
+                    serverMessage = null;
+                }
+            } catch (Exception e) {
+                Log.e("TCP", "S: Error", e);
+            } finally {
+                //the socket must be closed. It is not possible to reconnect to this socket
+                // after it is closed, which means a new socket instance has to be created.
+                socket.close();
+            }
+        } catch (Exception e) {
+            Log.e("TCP", "C: Error", e);
+        }
+    }
+
+    //Declare the interface. The method messageReceived(String message) will must be implemented in the MyActivity
+    //class at on asynckTask doInBackground
+    public interface OnMessageReceived {
+        public void messageReceived(String message);
+    }
+
+}
